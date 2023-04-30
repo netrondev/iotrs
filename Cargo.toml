@@ -14,6 +14,11 @@ edition = "2021"
 [package.metadata]
 chip = "ATSAMD21G18A"
 
+[dependencies]
+embedded-hal = "0.2.7"
+one-wire-bus = "0.1.1"
+panic-halt = "0.2.0"
+
 [dependencies.cortex-m-rt]
 version = "0.7"
 optional = true
@@ -54,10 +59,23 @@ debug = true
 lto = true
 opt-level = "s"
 
+[[bin]]
+name = "main"
+test = false
+bench = false
+
 [[example]]
 name = "blinky_basic"
 
 [[example]]
+name = "main_serial"
+
+[[example]]
 name = "main_ethernet"
 
+[[example]]
+name = "main_tempds18b20"
 
+[[example]]
+name = "usb_echo"
+required-features = ["usb", "unproven"]
