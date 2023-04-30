@@ -1,10 +1,14 @@
 #![no_std]
 #![no_main]
-
-use panic_halt as _;
+// #![feature(restricted_std)]
+// use core::fmt::{self, Write};
+use arrform::{arrform, ArrForm};
 
 use cortex_m::asm::delay as cycle_delay;
 use cortex_m::peripheral::NVIC;
+use heapless::String;
+use panic_halt as _;
+
 use usb_device::bus::UsbBusAllocator;
 use usb_device::prelude::*;
 use usbd_serial::{SerialPort, USB_CLASS_CDC};
@@ -18,6 +22,16 @@ use hal::clock::GenericClockController;
 use hal::prelude::*;
 use hal::usb::UsbBus;
 use pac::{interrupt, CorePeripherals, Peripherals};
+
+// macro_rules! format {
+//     ($($arg:tt)*) => {{
+//         let mut s = String::new();
+//         uwrite!(s, "{:?}", pair).unwrap();
+//         // let res = ufmt:: core::fmt::Write(s, $($arg)*);
+//         let res = ufmt::
+//         res
+//     }}
+// }
 
 #[entry]
 fn main() -> ! {
@@ -64,9 +78,20 @@ fn main() -> ! {
 
     // Flash the LED in a spin loop to demonstrate that USB is
     // entirely interrupt driven.
+    let mut test: usize = 0;
     loop {
         cycle_delay(15 * 1024 * 1024);
         red_led.toggle().ok();
+
+        // let mut s = String::new();
+        // uwrite!(s, "{:?}", test).unwrap();
+
+        // printSerial(b"Hello world\n");
+        // let mut s = format!("Time is now 0x{:08x}", 123);
+        let af = arrform!(64, "Hello World {}\n", test);
+        printSerial(af.as_bytes());
+        // let teststr = format!("hello {}", test);
+        test += 1;
     }
 }
 
@@ -100,4 +125,15 @@ fn poll_usb() {
 #[interrupt]
 fn USB() {
     poll_usb();
+}
+
+fn printSerial(input: &[u8]) {
+    unsafe {
+        if let Some(usb_dev) = USB_BUS.as_mut() {
+            if let Some(serial) = USB_SERIAL.as_mut() {
+                // serial.write("Idle 4...\n".as_bytes()).ok();
+                serial.write(input).ok();
+            };
+        }
+    };
 }

@@ -2,9 +2,17 @@
 
 # ./buildUpload.sh usb_echo
 
+echo ""
+echo ""
+echo "============================================================"
+echo ""
+echo ""
+
+rm -rf target/thumbv6m-none-eabi/debug/examples
+
 echo "Building $1"
 # cargo build --features="usb unproven" --example $1
-cargo build --features="usb unproven" --example $1
+cargo build --features="usb unproven" --example $1 || exit 1
 
 echo "Converting to binary"
 arm-none-eabi-objcopy -O binary target/thumbv6m-none-eabi/debug/examples/$1 target/thumbv6m-none-eabi/debug/examples/$1.bin

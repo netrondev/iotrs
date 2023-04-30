@@ -15,9 +15,12 @@ edition = "2021"
 chip = "ATSAMD21G18A"
 
 [dependencies]
+arrform = "0.1.1"
 embedded-hal = "0.2.7"
+heapless = "0.7.16"
 one-wire-bus = "0.1.1"
 panic-halt = "0.2.0"
+ufmt = "0.2.0"
 
 [dependencies.cortex-m-rt]
 version = "0.7"
