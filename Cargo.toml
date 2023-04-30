@@ -69,6 +69,7 @@ name = "blinky_basic"
 
 [[example]]
 name = "main_serial"
+required-features = ["usb", "unproven"]
 
 [[example]]
 name = "main_ethernet"

@@ -60,6 +60,8 @@ fn main() -> ! {
         NVIC::unmask(interrupt::USB);
     }
 
+    // let mut serial = usbd_serial::SerialPort::new(&usb_bus);
+
     // Flash the LED in a spin loop to demonstrate that USB is
     // entirely interrupt driven.
     loop {
@@ -84,6 +86,9 @@ fn poll_usb() {
                         if i >= count {
                             break;
                         }
+                        serial.write("Received: ".as_bytes()).ok();
+                        // serial.write(&[c.clone()]).ok();
+                        // serial.write("\r\n".as_bytes()).ok();
                         serial.write(&[*c]).ok();
                     }
                 };
