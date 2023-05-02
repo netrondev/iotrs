@@ -1,0 +1,15 @@
+[default.general]
+chip = "ATSAMD21G18AU"
+
+# chip = "ATSAMD21G18AU"
+
+
+[default.flashing]
+enabled = true
+
+
+# [default.reset]
+# enabled = true
+
+# [default.rtt]
+# enabled = true

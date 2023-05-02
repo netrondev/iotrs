@@ -31,8 +31,6 @@ fn main() {
     // `memory.x` is changed.
     println!("cargo:rerun-if-changed=memory.x");
 
-    println!("cargo:rustc-link-arg-bins=-Wl,--nmagic");
-
     // Specify linker arguments.
 
     // `--nmagic` is required if memory section addresses are not aligned to 0x10000,
