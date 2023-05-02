@@ -4,7 +4,7 @@ name: build
 
 jobs:
   check:
-    name: Rust project
+    name: Check Firmware builds
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
