@@ -7,8 +7,6 @@ jobs:
     name: Rust project
     runs-on: ubuntu-latest
     steps:
-
-    steps:
       - uses: actions/checkout@v2
       - name: Install ARM Toolchain
         uses: carlosperate/arm-none-eabi-gcc-action@v1
