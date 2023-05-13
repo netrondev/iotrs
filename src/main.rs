@@ -1,6 +1,7 @@
 #![no_main]
 #![no_std]
 
+// use alloc::boxed::Box;
 use arrform::{arrform, ArrForm};
 
 use bsp::hal::usb::UsbBus;
@@ -11,12 +12,16 @@ use cortex_m::peripheral::NVIC;
 use bsp::hal;
 use bsp::pac;
 
+use ds18b20::Resolution;
 use hal::clock::GenericClockController;
 
 use hal::prelude::*;
 
 use hal::delay::Delay;
 use metro_m0 as bsp;
+use onewire::OneWire;
+use onewire::OneWireError;
+use onewire::OneWireResult;
 use pac::{interrupt, CorePeripherals, Peripherals};
 
 use panic_halt as _;
@@ -24,6 +29,26 @@ use panic_halt as _;
 use usb_device::bus::UsbBusAllocator;
 use usb_device::prelude::*;
 use usbd_serial::{SerialPort, USB_CLASS_CDC};
+
+use embedded_hal::blocking::delay::DelayMs;
+use embedded_hal::blocking::delay::DelayUs;
+
+mod onewire;
+use core::fmt::Debug;
+use embedded_hal::digital::v2::{InputPin, OutputPin};
+
+use crate::ds18b20::Ds18b20;
+mod ds18b20;
+
+// struct onewirepin {}
+
+// impl InputPin for onewirepin {
+//     fn is_high(&self) -> Result<bool, Self::Error> {}
+
+//     fn is_low(&self) -> Result<bool, Self::Error> {}
+
+//     type Error = Self::Error;
+// }
 
 #[cortex_m_rt::entry]
 fn main() -> ! {
@@ -71,6 +96,11 @@ fn main() -> ! {
     let mut red_led: bsp::RedLed = pins.d13.into();
     let mut delay = Delay::new(core.SYST, &mut clocks);
 
+    // let mut one_wire_pin = pins.d5.into_readable_output();
+    let mut one_wire_pin = pins.d5.into_readable_output();
+
+    let mut one_wire_bus = OneWire::new(one_wire_pin).unwrap();
+
     loop {
         // rprintln!("Hello, world!");
         delay.delay_ms(200u8);
@@ -81,6 +111,8 @@ fn main() -> ! {
         let af = arrform!(64, "Hello World {}\n", test);
         print_serial(af.as_bytes());
         test += 1;
+
+        get_temperature(&mut delay, &mut one_wire_bus);
     }
 }
 
@@ -125,4 +157,57 @@ fn print_serial(input: &[u8]) {
             };
         }
     };
+}
+
+fn get_temperature<P, E>(
+    delay: &mut (impl DelayUs<u16> + DelayMs<u16>),
+    one_wire_bus: &mut OneWire<P>,
+) -> OneWireResult<(), E>
+where
+    P: OutputPin<Error = E> + InputPin<Error = E>,
+    E: Debug,
+{
+    // initiate a temperature measurement for all connected devices
+    ds18b20::start_simultaneous_temp_measurement(one_wire_bus, delay)?;
+
+    // wait until the measurement is done. This depends on the resolution you specified
+    // If you don't know the resolution, you can obtain it from reading the sensor data,
+    // or just wait the longest time, which is the 12-bit resolution (750ms)
+    Resolution::Bits12.delay_for_measurement_time(delay);
+
+    // iterate over all the devices, and report their temperature
+    let mut search_state = None;
+    loop {
+        if let Some((device_address, state)) =
+            one_wire_bus.device_search(search_state.as_ref(), false, delay)?
+        {
+            search_state = Some(state);
+            if device_address.family_code() != ds18b20::FAMILY_CODE {
+                // skip other devices
+                continue;
+            }
+            // You will generally create the sensor once, and save it for later
+            let sensor = Ds18b20::new(device_address)?;
+
+            // contains the read temperature, as well as config info such as the resolution used
+            let sensor_data = sensor.read_data(one_wire_bus, delay)?;
+
+            let af = arrform!(
+                64,
+                "Device at {:?} is {}°C",
+                device_address,
+                sensor_data.temperature
+            );
+            print_serial(af.as_bytes());
+
+            // writeln!(
+            //     tx,
+            //     "Device at {:?} is {}°C",
+            //     device_address, sensor_data.temperature
+            // );
+        } else {
+            break;
+        }
+    }
+    Ok(())
 }
